@@ -25,9 +25,9 @@ mybatis-plus:
 # Jasypt 加密配置
 jasypt:
   encryptor:
-    password: "l}E0P&678x89" # <-- 修改为一个强随机密钥，用于加密图床配置
+    password: "Xt>sr)W67[Ny,e5sHFUy7{:W(,Jr(vrQ" # <-- 修改为一个强随机密钥，用于加密图床配置
 
 # 自定义JWT配置
 jwt:
-  secret: "25k$CLM4XE2B" # <-- 修改为一个强随机密钥，用于签发JWT
+  secret: "3sCd}N;Y{aKhf+*ECHx[%x?J2y3aZ>Gx" # <-- 修改为一个强随机密钥，用于签发JWT
   expiration: 86400000 # Token有效期（毫秒），这里是24小时
