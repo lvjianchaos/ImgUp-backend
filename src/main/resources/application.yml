@@ -1,0 +1,33 @@
+server:
+  port: 8080
+
+spring:
+  # 数据库数据源配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/imgup_db?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: Lv050611_ # <-- 修改为你的数据库密码
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  mapper-locations: classpath:/mapper/*.xml # Mapper XML文件位置
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 打印SQL日志到控制台
+  global-config:
+    db-config:
+      # 逻辑删除配置
+      logic-delete-field: deleted # 全局逻辑删除的实体字段名
+      logic-delete-value: 1 # 逻辑已删除值(默认为 1)
+      logic-not-delete-value: 0 # 逻辑未删除值(默认为 0)
+
+# Jasypt 加密配置
+jasypt:
+  encryptor:
+    password: "l}E0P&678x89" # <-- 修改为一个强随机密钥，用于加密图床配置
+
+# 自定义JWT配置
+jwt:
+  secret: "25k$CLM4XE2B" # <-- 修改为一个强随机密钥，用于签发JWT
+  expiration: 86400000 # Token有效期（毫秒），这里是24小时
