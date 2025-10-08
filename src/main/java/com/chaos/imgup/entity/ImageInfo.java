@@ -21,3 +21,4 @@ public class ImageInfo {
     private String imageType;
     private LocalDateTime createTime;
 }
+

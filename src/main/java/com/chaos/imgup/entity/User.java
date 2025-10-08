@@ -20,3 +20,4 @@ public class User {
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }
+
