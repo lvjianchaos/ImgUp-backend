@@ -20,5 +20,6 @@ public class ImageInfo {
     private Long imageSize;
     private String imageType;
     private LocalDateTime createTime;
+    private LocalDateTime updateTime;
 }
 
