@@ -125,7 +125,7 @@ public class OssConfigServiceImpl implements OssConfigService {
         ossConfigMapper.updateById(newDefault);
     }
 
-    // 辅助方法：将用户所有旧的默认配置取消
+    // 辅助方法：将用户所有旧默认配置取消
     private void unsetOldDefault(Long userId) {
         ossConfigMapper.update(
                 null,

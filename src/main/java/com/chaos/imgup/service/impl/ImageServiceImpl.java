@@ -8,6 +8,7 @@ import com.chaos.imgup.mapper.ImageInfoMapper;
 import com.chaos.imgup.mapper.OssConfigMapper;
 import com.chaos.imgup.service.ImageService;
 import com.chaos.imgup.service.OssConfigService;
+import com.chaos.imgup.uploader.UploadResponse;
 import com.chaos.imgup.uploader.Uploader;
 import com.chaos.imgup.uploader.UploaderFactory;
 import com.chaos.imgup.util.AuthUtil;
@@ -24,13 +25,10 @@ public class ImageServiceImpl implements ImageService {
 
     @Autowired
     private OssConfigMapper ossConfigMapper;
-
     @Autowired
     private OssConfigService ossConfigService;
-
     @Autowired
     private ImageInfoMapper imageInfoMapper;
-
     @Autowired
     private UploaderFactory uploaderFactory;
 
@@ -43,49 +41,42 @@ public class ImageServiceImpl implements ImageService {
         OssConfig configToUse;
         if (ossConfigId != null) {
             configToUse = ossConfigMapper.selectOne(new QueryWrapper<OssConfig>()
-                    .eq("id", ossConfigId)
-                    .eq("user_id", currentUser.getId()));
-            if (configToUse == null) {
-                throw new RuntimeException("指定的配置不存在或无权使用");
-            }
+                    .eq("id", ossConfigId).eq("user_id", currentUser.getId()));
+            if (configToUse == null) throw new RuntimeException("指定的配置不存在或无权使用");
         } else {
             configToUse = ossConfigMapper.selectOne(new QueryWrapper<OssConfig>()
-                    .eq("user_id", currentUser.getId())
-                    .eq("is_default", true));
-            if (configToUse == null) {
-                throw new RuntimeException("未找到默认图床配置，请先配置");
-            }
+                    .eq("user_id", currentUser.getId()).eq("is_default", true));
+            if (configToUse == null) throw new RuntimeException("未找到默认图床配置，请先配置");
         }
 
         // 2. 获取解密的配置详情
         Map<String, String> decryptedDetails = ossConfigService.getConfigDetail(configToUse.getId());
-
         // 3. 使用工厂获取对应的Uploader
         Uploader uploader = uploaderFactory.getUploader(configToUse.getOssType());
 
         // 4. 执行上传
-        String fileUrl;
+        UploadResponse uploadResponse;
         try {
-            fileUrl = uploader.upload(file, decryptedDetails);
+            uploadResponse = uploader.upload(file, decryptedDetails);
         } catch (Exception e) {
-            // 实际项目中应记录详细日志
             e.printStackTrace();
             throw new RuntimeException("文件上传失败: " + e.getMessage());
         }
 
-        // 5. 将图片信息存入数据库
+        // 5. 将图片信息存入数据库 (使用新字段)
         ImageInfo imageInfo = new ImageInfo();
         imageInfo.setUserId(currentUser.getId());
         imageInfo.setOssConfigId(configToUse.getId());
         imageInfo.setOriginalName(file.getOriginalFilename());
-        imageInfo.setImageUrl(fileUrl);
+        imageInfo.setImageUrl(uploadResponse.url()); // 保存完整URL
+        imageInfo.setStorageName(uploadResponse.storageName()); // 保存Storage Name
         imageInfo.setImageSize(file.getSize());
         imageInfo.setImageType(file.getContentType());
         imageInfoMapper.insert(imageInfo);
 
         // 6. 返回结果
         return UploadResultVO.builder()
-                .url(fileUrl)
+                .url(uploadResponse.url())
                 .originalName(file.getOriginalFilename())
                 .size(file.getSize())
                 .build();

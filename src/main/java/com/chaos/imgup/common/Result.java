@@ -16,14 +16,15 @@ public class Result<T> {
         return result;
     }
 
-    public static Result<?> success() {
+    public static <T> Result<T> success() {
         return success(null);
     }
 
-    public static Result<?> error(Integer code, String message) {
-        Result<?> result = new Result<>();
+    public static <T> Result<T> error(Integer code, String message) {
+        Result<T> result = new Result<>();
         result.setCode(code);
         result.setMessage(message);
+        result.setData(null); // 对于错误情况，data字段为null
         return result;
     }
 }
