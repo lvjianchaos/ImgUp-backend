@@ -22,7 +22,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -88,6 +91,15 @@ public class ImageServiceImpl implements ImageService {
     }
 
     @Override
+    @Transactional // 整个批量上传是一个事务
+    public List<UploadResultVO> uploadImages(MultipartFile[] files, Long ossConfigId) {
+        return Arrays.stream(files)
+                .parallel() // 使用并行流，在文件较多时可以提升处理速度
+                .map(file -> uploadImage(file, ossConfigId))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public IPage<ImageInfo> listImages(PageDTO pageDTO) {
         User currentUser = AuthUtil.getCurrentUser();
 
@@ -136,5 +148,49 @@ public class ImageServiceImpl implements ImageService {
 
         // 4. 删除数据库记录
         imageInfoMapper.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public void deleteImages(List<Long> ids) {
+        User currentUser = AuthUtil.getCurrentUser();
+
+        // 1. 一次性查询出所有待删除的图片信息，并校验权限
+        List<ImageInfo> imagesToDelete = imageInfoMapper.selectList(new QueryWrapper<ImageInfo>()
+                .in("id", ids)
+                .eq("user_id", currentUser.getId()));
+
+        if (imagesToDelete.size() != ids.size()) {
+            // 如果查询出的数量和传入ID数量不符，说明部分图片不存在或不属于该用户
+            throw new RuntimeException("部分图片不存在或无权删除");
+        }
+        if (imagesToDelete.isEmpty()) {
+            return; // 如果列表为空，直接返回
+        }
+
+        // 2. 按 ossConfigId 分组，减少 OSSClient 的创建次数
+        Map<Long, List<ImageInfo>> groupedByConfig = imagesToDelete.stream()
+                .collect(Collectors.groupingBy(ImageInfo::getOssConfigId));
+
+        // 3. 遍历分组，执行删除
+        groupedByConfig.forEach((configId, images) -> {
+            try {
+                OssConfig ossConfig = ossConfigMapper.selectById(configId);
+                if (ossConfig == null) throw new RuntimeException("OSS配置不存在: " + configId);
+
+                Map<String, String> decryptedDetails = ossConfigService.getConfigDetail(ossConfig.getId());
+                Uploader uploader = uploaderFactory.getUploader(ossConfig.getOssType());
+
+                // 对该分组下的所有图片执行删除
+                for (ImageInfo image : images) {
+                    uploader.delete(image.getStorageName(), decryptedDetails);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("从云端删除文件时出错: " + e.getMessage(), e);
+            }
+        });
+
+        // 4. 所有云端文件都删除成功后，一次性删除所有数据库记录
+        imageInfoMapper.deleteByIds(ids);
     }
 }

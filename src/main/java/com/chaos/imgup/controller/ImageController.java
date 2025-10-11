@@ -10,6 +10,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/images")
 public class ImageController {
@@ -37,5 +39,19 @@ public class ImageController {
     public Result<?> delete(@PathVariable Long id) {
         imageService.deleteImage(id);
         return Result.success("删除成功");
+    }
+
+    /**
+     * 批量删除
+     * @param ids
+     * @return
+     */
+    @DeleteMapping
+    public Result<?> deleteBatch(@RequestBody List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Result.error(400, "请选择要删除的图片");
+        }
+        imageService.deleteImages(ids);
+        return Result.success("批量删除成功");
     }
 }

@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/upload")
 public class UploadController {
@@ -18,14 +20,14 @@ public class UploadController {
     private ImageService imageService;
 
     @PostMapping
-    public Result<UploadResultVO> upload(
-            @RequestParam("file") MultipartFile file,
+    public Result<List<UploadResultVO>> upload(
+            @RequestParam("files") MultipartFile[] files,
             @RequestParam(value = "configId", required = false) Long configId
     ) {
-        if (file.isEmpty()) {
+        if (files == null || files.length == 0) {
             return Result.error(400, "上传文件不能为空");
         }
-        UploadResultVO resultVO = imageService.uploadImage(file, configId);
-        return Result.success(resultVO);
+        List<UploadResultVO> resultVOs = imageService.uploadImages(files, configId);
+        return Result.success(resultVOs);
     }
 }
