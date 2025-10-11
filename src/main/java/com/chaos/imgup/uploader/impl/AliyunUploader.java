@@ -29,7 +29,7 @@ public class AliyunUploader implements Uploader {
             if (originalFilename != null && originalFilename.contains(".")) {
                 fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
             }
-            // 这就是 storageName
+            // 即 storageName
             String objectName = UUID.randomUUID().toString() + fileExtension;
 
             ossClient.putObject(bucketName, objectName, inputStream);
@@ -37,6 +37,23 @@ public class AliyunUploader implements Uploader {
             String url = "https://" + bucketName + "." + endpoint + "/" + objectName;
 
             return new UploadResponse(url, objectName);
+        } finally {
+            if (ossClient != null) {
+                ossClient.shutdown();
+            }
+        }
+    }
+
+    @Override
+    public void delete(String storageName, Map<String, String> config) throws Exception {
+        String endpoint = config.get("endpoint");
+        String accessKeyId = config.get("accessKeyId");
+        String accessKeySecret = config.get("accessKeySecret");
+        String bucketName = config.get("bucketName");
+
+        OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
+        try {
+            ossClient.deleteObject(bucketName, storageName);
         } finally {
             if (ossClient != null) {
                 ossClient.shutdown();
