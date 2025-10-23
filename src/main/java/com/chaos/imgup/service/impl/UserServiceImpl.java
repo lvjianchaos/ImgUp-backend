@@ -6,9 +6,12 @@ import com.chaos.imgup.dto.RegisterDTO;
 import com.chaos.imgup.entity.User;
 import com.chaos.imgup.mapper.UserMapper;
 import com.chaos.imgup.service.UserService;
+import com.chaos.imgup.util.AuthUtil;
 import com.chaos.imgup.util.JwtUtil;
 import com.chaos.imgup.vo.LoginVO;
+import com.chaos.imgup.vo.UserInfoVO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -16,6 +19,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -31,6 +36,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    // 存储已失效的刷新令牌，用于登出功能
+    private final ConcurrentHashMap<String, Long> invalidatedRefreshTokens = new ConcurrentHashMap<>();
 
     @Override
     public void register(RegisterDTO registerDTO) {
@@ -62,8 +70,55 @@ public class UserServiceImpl implements UserService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         final UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        final String token = jwtUtil.generateToken(userDetails);
+        String accessToken = jwtUtil.generateAccessToken(userDetails.getUsername());
+        String refreshToken = jwtUtil.generateRefreshToken(userDetails.getUsername());
+        return new LoginVO(accessToken, refreshToken, jwtUtil.getAccessTokenExpiration() / 1000);
+    }
 
-        return new LoginVO(token);
+    @Override
+    public LoginVO refreshToken(String refreshToken) {
+        // 检查刷新令牌是否已失效
+        if (invalidatedRefreshTokens.containsKey(refreshToken)) {
+            throw new RuntimeException("Refresh token has been invalidated");
+        }
+
+        // 验证刷新令牌
+        if (!jwtUtil.validateRefreshToken(refreshToken)) {
+            throw new RuntimeException("Invalid refresh token");
+        }
+
+        String username = jwtUtil.extractUsername(refreshToken);
+
+        // 生成新的访问令牌和刷新令牌
+        String newAccessToken = jwtUtil.generateAccessToken(username);
+        String newRefreshToken = jwtUtil.generateRefreshToken(username);
+
+        // 将旧的刷新令牌加入失效列表
+        invalidatedRefreshTokens.put(refreshToken, jwtUtil.extractExpiration(refreshToken).getTime());
+
+        return new LoginVO(newAccessToken, newRefreshToken, jwtUtil.getAccessTokenExpiration() / 1000);
+    }
+
+    @Override
+    public void logout(String refreshToken) {
+        if (refreshToken != null && jwtUtil.validateRefreshToken(refreshToken)) {
+            invalidatedRefreshTokens.put(refreshToken, jwtUtil.extractExpiration(refreshToken).getTime());
+        }
+    }
+
+    @Override
+    public UserInfoVO getUserByUsername() {
+        User user = AuthUtil.getCurrentUser();
+        return new UserInfoVO(user.getUsername(), user.getNickname(), user.getAvatar(), user.getEmail(), user.getCreateTime());
+    }
+
+
+
+    // 定时任务：每天凌晨清理过期的黑名单令牌
+    @Scheduled(cron = "0 0 0 * * ?")
+    private void cleanExpiredTokens() {
+        long now = System.currentTimeMillis();
+        // 移除所有已过期的令牌
+        invalidatedRefreshTokens.entrySet().removeIf(entry -> entry.getValue() < now);
     }
 }

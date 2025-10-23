@@ -9,6 +9,8 @@ public class ImageVO {
     private String originalName;
     private String imageUrl;
     private Long imageSize;
-    private String imageType;
+    private String ossConfigName;
+    private String ossConfigType;
     private LocalDateTime createTime;
+    private LocalDateTime updateTime;
 }

@@ -1,11 +1,12 @@
 server:
   port: 8080
 
+
 spring:
   servlet:
     multipart:
       max-request-size: 100MB
-      max-file-size: 10MB
+      max-file-size: 20MB
   # 数据库数据源配置
   datasource:
     url: jdbc:mysql://localhost:3306/imgup_db?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
@@ -33,5 +34,14 @@ jasypt:
 
 # 自定义JWT配置
 jwt:
-  secret: "3sCd}N;Y{aKhf+*ECHx[%x?J2y3aZ>Gx" # <-- 修改为一个强随机密钥，用于签发JWT
-  expiration: 86400000 # Token有效期（毫秒），这里是24小时
+  secret: "4JfTqMBa8cOyFfjCDzOGvQ13WC4v+Z2rmSVQlj1kAiM=" # Base64
+  accessTokenExpiration: 900000 # accessTokenExpiration有效期，这里为 15 minutes
+  refreshTokenExpiration: 604800000 # refreshTokenExpiration有效期，这里为 7 days
+
+
+logging:
+  level:
+    com:
+      chaos: debug
+
+debug: true

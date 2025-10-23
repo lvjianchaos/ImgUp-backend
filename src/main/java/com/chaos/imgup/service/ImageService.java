@@ -1,8 +1,6 @@
 package com.chaos.imgup.service;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.chaos.imgup.dto.PageDTO;
-import com.chaos.imgup.entity.ImageInfo;
+import com.chaos.imgup.vo.ImageVO;
 import com.chaos.imgup.vo.UploadResultVO;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,11 +12,15 @@ public interface ImageService {
     // 批量上传接口
     List<UploadResultVO> uploadImages(MultipartFile[] files, Long ossConfigId);
 
-    IPage<ImageInfo> listImages(PageDTO pageDTO);
+    // IPage<ImageInfo> listImages(PageDTO pageDTO);
+
+    List<ImageVO> listImages();
 
     void deleteImage(Long id);
 
     // 批量删除接口
     void deleteImages(List<Long> ids);
+
+    void renameImage(Long id, String newName);
 }
 

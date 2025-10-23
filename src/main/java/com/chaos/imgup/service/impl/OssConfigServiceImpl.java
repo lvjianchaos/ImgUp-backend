@@ -3,8 +3,10 @@ package com.chaos.imgup.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.chaos.imgup.dto.OssConfigDTO;
+import com.chaos.imgup.entity.ImageInfo;
 import com.chaos.imgup.entity.OssConfig;
 import com.chaos.imgup.entity.User;
+import com.chaos.imgup.mapper.ImageInfoMapper;
 import com.chaos.imgup.mapper.OssConfigMapper;
 import com.chaos.imgup.service.OssConfigService;
 import com.chaos.imgup.util.AuthUtil;
@@ -27,6 +29,9 @@ public class OssConfigServiceImpl implements OssConfigService {
 
     @Autowired
     private OssConfigMapper ossConfigMapper;
+
+    @Autowired
+    private ImageInfoMapper imageInfoMapper;
 
     @Autowired
     @Qualifier("jasyptStringEncryptor") // 指定使用我们自定义的Bean
@@ -73,6 +78,22 @@ public class OssConfigServiceImpl implements OssConfigService {
     }
 
     @Override
+    public List<OssConfigVO> listConfigsByType(String type) {
+        User currentUser = AuthUtil.getCurrentUser();
+
+        List<OssConfig> configs = ossConfigMapper.selectList(
+                new QueryWrapper<OssConfig>()
+                        .eq("user_id", currentUser.getId())
+                        .eq("oss_type", type)
+        );
+        return configs.stream().map(config -> {
+            OssConfigVO vo = new OssConfigVO();
+            BeanUtils.copyProperties(config, vo);
+            return vo;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
     public Map<String, String> getConfigDetail(Long id) {
         User currentUser = AuthUtil.getCurrentUser();
         OssConfig config = getConfigForUser(id, currentUser.getId());
@@ -106,10 +127,15 @@ public class OssConfigServiceImpl implements OssConfigService {
     }
 
     @Override
-    public void deleteConfig(Long id) {
+    public Boolean deleteConfig(Long id) {
+        boolean imageExists = imageInfoMapper.exists(new QueryWrapper<ImageInfo>().eq("oss_config_id", id));
+        if(imageExists) {
+            return false;
+        }
         User currentUser = AuthUtil.getCurrentUser();
         OssConfig config = getConfigForUser(id, currentUser.getId());
         ossConfigMapper.deleteById(config.getId());
+        return true;
     }
 
     @Override

@@ -28,6 +28,11 @@ public class OssConfigController {
         return Result.success(ossConfigService.listConfigs());
     }
 
+    @GetMapping("/list/{type}")
+    public Result<List<OssConfigVO>> listConfigsByType(@PathVariable String type) {
+        return Result.success(ossConfigService.listConfigsByType(type));
+    }
+
     @GetMapping("/{id}/detail")
     public Result<Map<String, String>> getConfigDetail(@PathVariable Long id) {
         return Result.success(ossConfigService.getConfigDetail(id));
@@ -41,8 +46,10 @@ public class OssConfigController {
 
     @DeleteMapping("/{id}")
     public Result<?> deleteConfig(@PathVariable Long id) {
-        ossConfigService.deleteConfig(id);
-        return Result.success();
+        if(ossConfigService.deleteConfig(id)) {
+            return Result.success();
+        }
+        return Result.error(500,"This Config has undeleted images, Please delete them first!");
     }
 
     @PutMapping("/default/{id}")

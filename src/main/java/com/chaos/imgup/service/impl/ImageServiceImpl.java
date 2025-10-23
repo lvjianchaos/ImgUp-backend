@@ -1,9 +1,6 @@
 package com.chaos.imgup.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.chaos.imgup.dto.PageDTO;
 import com.chaos.imgup.entity.ImageInfo;
 import com.chaos.imgup.entity.OssConfig;
 import com.chaos.imgup.entity.User;
@@ -15,6 +12,7 @@ import com.chaos.imgup.uploader.UploadResponse;
 import com.chaos.imgup.uploader.Uploader;
 import com.chaos.imgup.uploader.UploaderFactory;
 import com.chaos.imgup.util.AuthUtil;
+import com.chaos.imgup.vo.ImageVO;
 import com.chaos.imgup.vo.UploadResultVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -99,18 +97,24 @@ public class ImageServiceImpl implements ImageService {
                 .collect(Collectors.toList());
     }
 
+//    @Override
+//    public IPage<ImageInfo> listImages(PageDTO pageDTO) {
+//        User currentUser = AuthUtil.getCurrentUser();
+//
+//        Page<ImageInfo> page = new Page<>(pageDTO.getCurrent(), pageDTO.getSize());
+//
+//        QueryWrapper<ImageInfo> queryWrapper = new QueryWrapper<>();
+//        queryWrapper.eq("user_id", currentUser.getId());
+//        // 按创建时间倒序排列
+//        queryWrapper.orderByDesc("create_time");
+//
+//        return imageInfoMapper.selectPage(page, queryWrapper);
+//    }
+
     @Override
-    public IPage<ImageInfo> listImages(PageDTO pageDTO) {
+    public List<ImageVO> listImages() {
         User currentUser = AuthUtil.getCurrentUser();
-
-        Page<ImageInfo> page = new Page<>(pageDTO.getCurrent(), pageDTO.getSize());
-
-        QueryWrapper<ImageInfo> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("user_id", currentUser.getId());
-        // 按创建时间倒序排列
-        queryWrapper.orderByDesc("create_time");
-
-        return imageInfoMapper.selectPage(page, queryWrapper);
+        return imageInfoMapper.selectAllImageInfoWithOssConfig(currentUser.getId());
     }
 
     @Override
@@ -192,5 +196,10 @@ public class ImageServiceImpl implements ImageService {
 
         // 4. 所有云端文件都删除成功后，一次性删除所有数据库记录
         imageInfoMapper.deleteByIds(ids);
+    }
+
+    @Override
+    public void renameImage(Long id, String newName) {
+        imageInfoMapper.renameById(id,newName);
     }
 }
