@@ -1,9 +1,7 @@
 package com.chaos.imgup.controller;
 
 import com.chaos.imgup.common.Result;
-import com.chaos.imgup.dto.LoginDTO;
-import com.chaos.imgup.dto.RefreshDTO;
-import com.chaos.imgup.dto.RegisterDTO;
+import com.chaos.imgup.dto.*;
 import com.chaos.imgup.service.UserService;
 import com.chaos.imgup.vo.LoginVO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,5 +44,17 @@ public class AuthController {
     @GetMapping("info")
     public Result<?> userInfo() {
         return Result.success(userService.getUserByUsername());
+    }
+
+    @PutMapping("password")
+    public Result<?> updatePassword(@RequestBody UpdatePasswordDTO updatePasswordDTO) {
+        userService.updatePassword(updatePasswordDTO);
+        return Result.success("修改密码成功");
+    }
+
+    @PutMapping("profile")
+    public Result<?> updateProfile(@RequestBody UpdateProfileDTO updateProfileDTO) {
+        userService.updateProfile(updateProfileDTO);
+        return Result.success("修改基本信息成功");
     }
 }

@@ -3,6 +3,8 @@ package com.chaos.imgup.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.chaos.imgup.dto.LoginDTO;
 import com.chaos.imgup.dto.RegisterDTO;
+import com.chaos.imgup.dto.UpdatePasswordDTO;
+import com.chaos.imgup.dto.UpdateProfileDTO;
 import com.chaos.imgup.entity.User;
 import com.chaos.imgup.mapper.UserMapper;
 import com.chaos.imgup.service.UserService;
@@ -19,6 +21,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -112,6 +116,49 @@ public class UserServiceImpl implements UserService {
         return new UserInfoVO(user.getUsername(), user.getNickname(), user.getAvatar(), user.getEmail(), user.getCreateTime());
     }
 
+    @Override
+    @Transactional
+    public void updateProfile(UpdateProfileDTO dto) {
+        User currentUser = AuthUtil.getCurrentUser();
+        User user = userMapper.selectById(currentUser.getId());
+
+        // 检查邮箱是否被修改
+        if (StringUtils.hasText(dto.getEmail()) && !dto.getEmail().equals(user.getEmail())) {
+            // 检查新邮箱是否已被占用
+            if (userMapper.selectOne(new QueryWrapper<User>().eq("email", dto.getEmail())) != null) {
+                throw new RuntimeException("该邮箱已被注册");
+            }
+            user.setEmail(dto.getEmail());
+        }
+
+        // 更新非空字段
+        if (StringUtils.hasText(dto.getNickname())) {
+            user.setNickname(dto.getNickname());
+        }
+        if (StringUtils.hasText(dto.getAvatar())) {
+            user.setAvatar(dto.getAvatar());
+        }
+
+        userMapper.updateById(user);
+    }
+
+    @Override
+    public void updatePassword(UpdatePasswordDTO dto) {
+        User currentUser = AuthUtil.getCurrentUser();
+        User user = userMapper.selectById(currentUser.getId());
+
+        // 1. 验证旧密码是否正确
+        if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
+            throw new RuntimeException("旧密码不正确");
+        }
+        // 2. 验证新密码是否为空
+        if (!StringUtils.hasText(dto.getNewPassword())) {
+            throw new RuntimeException("新密码不能为空");
+        }
+        // 3. 更新密码
+        user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        userMapper.updateById(user);
+    }
 
 
     // 定时任务：每天凌晨清理过期的黑名单令牌

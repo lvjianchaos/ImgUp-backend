@@ -136,6 +136,14 @@
             <artifactId>github-api</artifactId>
             <version>1.327</version>
         </dependency>
+
+        <!-- QINIU SDK -->
+        <dependency>
+            <groupId>com.qiniu</groupId>
+            <artifactId>qiniu-java-sdk</artifactId>
+            <version>[7.19.0, 7.19.99]</version>
+        </dependency>
+
     </dependencies>
 
     <build>
