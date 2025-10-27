@@ -1,7 +1,6 @@
 server:
   port: 8080
 
-
 spring:
   servlet:
     multipart:
@@ -10,8 +9,8 @@ spring:
   # 数据库数据源配置
   datasource:
     url: jdbc:mysql://localhost:3306/imgup_db?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-    username: root
-    password: Lv050611_ # <-- 修改为你的数据库密码
+    username: xxxx # <-- 填写你的数据库用户名
+    password: xxxxxxxx # <-- 修改为你的数据库密码
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.alibaba.druid.pool.DruidDataSource
 
@@ -37,7 +36,6 @@ jwt:
   secret: "4JfTqMBa8cOyFfjCDzOGvQ13WC4v+Z2rmSVQlj1kAiM=" # Base64
   accessTokenExpiration: 900000 # accessTokenExpiration有效期，这里为 15 minutes
   refreshTokenExpiration: 604800000 # refreshTokenExpiration有效期，这里为 7 days
-
 
 logging:
   level:
